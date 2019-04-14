@@ -35,12 +35,7 @@ def getrow(line):
   row = line.split(',')
   sentiment = row[1]
   tweet = row[3].strip()
-  translator = str.maketrans({key: None for key in string.punctuation})
-  tweet = tweet.translate(translator)
-  tweet = tweet.split(' ')
-  tweet_lower = []
-  for word in tweet:
-    tweet_lower.append(word.lower())
+  tweet_lower=get_tweet_text(tweet)
   return (tweet_lower, sentiment)
 
 def func_streamer():
@@ -69,26 +64,27 @@ def func_classify(tweet):
   test_set = sentim_analyzer.apply_features(sentence)
   return(tweet, classifier.classify(test_set[0][0]))
 
-def get_tweet_text(rdd):
+def get_tweet_text(tweet):
   """
   Returns cleaned tweet text
   """
-  for line in rdd:
-    tweet = line.strip()
-    translator = str.maketrans({key: None for key in string.punctuation})
-    tweet = tweet.translate(translator)
-    tweet = tweet.split(' ')
-    tweet_lower = []
-    for word in tweet:
-      tweet_lower.append(word.lower())
-    return(func_classify(tweet_lower))
+
+  tweet = line.strip()
+  translator = str.maketrans({key: None for key in string.punctuation})
+  tweet = tweet.translate(translator)
+  tweet = tweet.split(' ')
+  tweet_lower = []
+  for word in tweet:
+    tweet_lower.append(word.lower())
+  return tweet_lower
+ 
 
 def func_rdd_output(rdd):
   """
   Adds labels to all tweets in the global result var
   """
   global results
-  couple = rdd.map(lambda x: (get_tweet_text(x)[1],1))
+  couple = rdd.map(lambda x: (func_classify(get_tweet_text(x))[1],1))
   counts = couple.reduceByKey(add)
   output = []
   for count in counts.collect():
